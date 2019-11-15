@@ -77,9 +77,9 @@ class H265SpsParser {
         SpsState& sps, rtc::BitBuffer* buffer);
 
  protected:
-  // Parse the SPS state, up till the transform part, for a bit buffer where RBSP
-  // decoding has already been performed.
-  static absl::optional<SpsState> ParseSpsUpToTransform(rtc::BitBuffer* buffer);
+ // Parse the SPS state, for a bit buffer where RBSP decoding has already been
+ // performed.
+  static absl::optional<SpsState> ParseSpsInternal(rtc::BitBuffer* buffer);
 };
 
 }  // namespace webrtc

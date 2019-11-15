@@ -52,7 +52,7 @@ absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSps(
     size_t length) {
   std::vector<uint8_t> unpacked_buffer = H265::ParseRbsp(data, length);
   rtc::BitBuffer bit_buffer(unpacked_buffer.data(), unpacked_buffer.size());
-  return ParseSpsUpToTransform(&bit_buffer);
+  return ParseSpsInternal(&bit_buffer);
 }
 
 bool H265SpsParser::ParseScalingListData(rtc::BitBuffer* buffer) {
@@ -75,7 +75,7 @@ bool H265SpsParser::ParseScalingListData(rtc::BitBuffer* buffer) {
           RETURN_FALSE_ON_FAIL(buffer->ReadSignedExponentialGolomb(&scaling_list_dc_coef_minus8[size_id - 2][matrix_id]));
           next_coef = scaling_list_dc_coef_minus8[size_id - 2][matrix_id];
         }
-        for (int i = 0; i < coef_num; i++) {
+        for (uint32_t i = 0; i < coef_num; i++) {
           // scaling_list_delta_coef: se(v)
           int32_t scaling_list_delta_coef = 0;
           RETURN_FALSE_ON_FAIL(buffer->ReadSignedExponentialGolomb(&scaling_list_delta_coef));
@@ -119,7 +119,7 @@ absl::optional<H265SpsParser::ShortTermRefPicSet> H265SpsParser::ParseShortTermR
       if (used_by_curr_pic_flag.size() != use_delta_flag.size()) {
         return OptionalShortTermRefPicSet();
       }
-      for (int i = 0; i < used_by_curr_pic_flag.size(); i++) {
+      for (uint32_t i = 0; i < used_by_curr_pic_flag.size(); i++) {
         if (used_by_curr_pic_flag[i] || use_delta_flag[i]) {
           num_delta_pocs++;
         }
@@ -129,7 +129,7 @@ absl::optional<H265SpsParser::ShortTermRefPicSet> H265SpsParser::ParseShortTermR
     }
     ref_pic_set.used_by_curr_pic_flag.resize(num_delta_pocs + 1, 0);
     ref_pic_set.use_delta_flag.resize(num_delta_pocs + 1, 1);
-    for (int j = 0; j <= num_delta_pocs; j++) {
+    for (uint32_t j = 0; j <= num_delta_pocs; j++) {
       // used_by_curr_pic_flag: u(1)
       RETURN_EMPTY2_ON_FAIL(buffer->ReadBits(&ref_pic_set.used_by_curr_pic_flag[j], 1));
       if (!ref_pic_set.used_by_curr_pic_flag[j]) {
@@ -145,7 +145,7 @@ absl::optional<H265SpsParser::ShortTermRefPicSet> H265SpsParser::ParseShortTermR
 
     ref_pic_set.delta_poc_s0_minus1.resize(ref_pic_set.num_negative_pics, 0);
     ref_pic_set.used_by_curr_pic_s0_flag.resize(ref_pic_set.num_negative_pics, 0);
-    for (int i = 0; i < ref_pic_set.num_negative_pics; i++) {
+    for (uint32_t i = 0; i < ref_pic_set.num_negative_pics; i++) {
       // delta_poc_s0_minus1: ue(v)
       RETURN_EMPTY2_ON_FAIL(buffer->ReadExponentialGolomb(&ref_pic_set.delta_poc_s0_minus1[i]));
       // used_by_curr_pic_s0_flag: u(1)
@@ -153,7 +153,7 @@ absl::optional<H265SpsParser::ShortTermRefPicSet> H265SpsParser::ParseShortTermR
     }
     ref_pic_set.delta_poc_s1_minus1.resize(ref_pic_set.num_positive_pics, 0);
     ref_pic_set.used_by_curr_pic_s1_flag.resize(ref_pic_set.num_positive_pics, 0);
-    for (int i = 0; i < ref_pic_set.num_positive_pics; i++) {
+    for (uint32_t i = 0; i < ref_pic_set.num_positive_pics; i++) {
       // delta_poc_s1_minus1: ue(v)
       RETURN_EMPTY2_ON_FAIL(buffer->ReadExponentialGolomb(&ref_pic_set.delta_poc_s1_minus1[i]));
       // used_by_curr_pic_s1_flag: u(1)
@@ -164,7 +164,7 @@ absl::optional<H265SpsParser::ShortTermRefPicSet> H265SpsParser::ParseShortTermR
   return OptionalShortTermRefPicSet(ref_pic_set);
 }
 
-absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsUpToTransform(
+absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsInternal(
     rtc::BitBuffer* buffer) {
   // Now, we need to use a bit buffer to parse through the actual HEVC SPS
   // format. See Section 7.3.2.2.1 ("General sequence parameter set data
@@ -290,7 +290,7 @@ absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsUpToTransform(
   uint32_t sps_sub_layer_ordering_info_present_flag = 0;
   // sps_sub_layer_ordering_info_present_flag: u(1)
   RETURN_EMPTY_ON_FAIL(buffer->ReadBits(&sps_sub_layer_ordering_info_present_flag, 1));
-  for (int i = (sps_sub_layer_ordering_info_present_flag != 0) ? 0 : sps_max_sub_layers_minus1;
+  for (uint32_t i = (sps_sub_layer_ordering_info_present_flag != 0) ? 0 : sps_max_sub_layers_minus1;
        i <= sps_max_sub_layers_minus1; i++) {
     // sps_max_dec_pic_buffering_minus1: ue(v)
     RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&sps.sps_max_dec_pic_buffering_minus1[i]));
@@ -349,7 +349,7 @@ absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsUpToTransform(
   // num_short_term_ref_pic_sets: ue(v)
   RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&sps.num_short_term_ref_pic_sets));
   sps.short_term_ref_pic_set.resize(sps.num_short_term_ref_pic_sets);
-  for (int st_rps_idx = 0; st_rps_idx < sps.num_short_term_ref_pic_sets; st_rps_idx++) {
+  for (uint32_t st_rps_idx = 0; st_rps_idx < sps.num_short_term_ref_pic_sets; st_rps_idx++) {
     // st_ref_pic_set()
     OptionalShortTermRefPicSet ref_pic_set = ParseShortTermRefPicSet(
         st_rps_idx, sps.num_short_term_ref_pic_sets, sps.short_term_ref_pic_set, sps, buffer);
@@ -366,7 +366,7 @@ absl::optional<H265SpsParser::SpsState> H265SpsParser::ParseSpsUpToTransform(
     // num_long_term_ref_pics_sps: ue(v)
     RETURN_EMPTY_ON_FAIL(buffer->ReadExponentialGolomb(&sps.num_long_term_ref_pics_sps));
     sps.used_by_curr_pic_lt_sps_flag.resize(sps.num_long_term_ref_pics_sps, 0);
-    for (int i = 0; i < sps.num_long_term_ref_pics_sps; i++) {
+    for (uint32_t i = 0; i < sps.num_long_term_ref_pics_sps; i++) {
       // lt_ref_pic_poc_lsb_sps: u(v)
       uint32_t lt_ref_pic_poc_lsb_sps_bits = sps.log2_max_pic_order_cnt_lsb_minus4 + 4;
       RETURN_EMPTY_ON_FAIL(buffer->ConsumeBits(lt_ref_pic_poc_lsb_sps_bits));

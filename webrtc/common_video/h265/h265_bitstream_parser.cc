@@ -94,7 +94,7 @@ H265BitstreamParser::Result H265BitstreamParser::ParseNonParameterSetNalu(
   }
 
   if (dependent_slice_segment_flag == 0) {
-    for (int i = 0; i < pps_->num_extra_slice_header_bits; i++) {
+    for (uint32_t i = 0; i < pps_->num_extra_slice_header_bits; i++) {
       // slice_reserved_flag: u(1)
       RETURN_INV_ON_FAIL(slice_reader.ReadBits(&bits_tmp, 1));
     }
@@ -151,7 +151,7 @@ H265BitstreamParser::Result H265BitstreamParser::ParseNonParameterSetNalu(
         RETURN_INV_ON_FAIL(slice_reader.ReadExponentialGolomb(&num_long_term_pics));
         lt_idx_sps.resize(num_long_term_sps + num_long_term_pics, 0);
         used_by_curr_pic_lt_flag.resize(num_long_term_sps + num_long_term_pics, 0);
-        for (int i = 0; i < num_long_term_sps + num_long_term_pics; i++) {
+        for (uint32_t i = 0; i < num_long_term_sps + num_long_term_pics; i++) {
           if (i < num_long_term_sps) {
             if (sps_->num_long_term_ref_pics_sps > 1) {
               // lt_idx_sps: u(v)
@@ -218,7 +218,7 @@ H265BitstreamParser::Result H265BitstreamParser::ParseNonParameterSetNalu(
         uint32_t ref_pic_list_modification_flag_l0 = 0;
         RETURN_INV_ON_FAIL(slice_reader.ReadBits(&ref_pic_list_modification_flag_l0, 1));
         if (ref_pic_list_modification_flag_l0) {
-          for (int i = 0; i < num_ref_idx_l0_active_minus1; i++) {
+          for (uint32_t i = 0; i < num_ref_idx_l0_active_minus1; i++) {
             // list_entry_l0: u(v)
             RETURN_INV_ON_FAIL(slice_reader.ReadBits(&bits_tmp, list_entry_bits));
           }
@@ -228,7 +228,7 @@ H265BitstreamParser::Result H265BitstreamParser::ParseNonParameterSetNalu(
           uint32_t ref_pic_list_modification_flag_l1 = 0;
           RETURN_INV_ON_FAIL(slice_reader.ReadBits(&ref_pic_list_modification_flag_l1, 1));
           if (ref_pic_list_modification_flag_l1) {
-            for (int i = 0; i < num_ref_idx_l1_active_minus1; i++) {
+            for (uint32_t i = 0; i < num_ref_idx_l1_active_minus1; i++) {
               // list_entry_l1: u(v)
               RETURN_INV_ON_FAIL(slice_reader.ReadBits(&bits_tmp, list_entry_bits));
             }
@@ -296,7 +296,7 @@ uint32_t H265BitstreamParser::CalcNumPocTotalCurr(
   bool used_by_curr_pic_lt[16];
   uint32_t num_long_term = num_long_term_sps + num_long_term_pics;
 
-  for (int i = 0; i < num_long_term; i++) {
+  for (uint32_t i = 0; i < num_long_term; i++) {
     if (i < num_long_term_sps) {
       used_by_curr_pic_lt[i] = sps_->used_by_curr_pic_lt_sps_flag[lt_idx_sps[i]];
     } else {
@@ -323,19 +323,19 @@ uint32_t H265BitstreamParser::CalcNumPocTotalCurr(
     ref_pic_set = &short_term_ref_pic_set;
   }
 
-  for (int i = 0; i < ref_pic_set->num_negative_pics; i++) {
+  for (uint32_t i = 0; i < ref_pic_set->num_negative_pics; i++) {
     if (ref_pic_set->used_by_curr_pic_s0_flag[i]) {
       num_poc_total_curr++;
     }
   }
 
-  for (int i = 0; i < ref_pic_set->num_positive_pics; i++) {
+  for (uint32_t i = 0; i < ref_pic_set->num_positive_pics; i++) {
     if (ref_pic_set->used_by_curr_pic_s1_flag[i]) {
       num_poc_total_curr++;
     }
   }
 
-  for (int i = 0; i < num_long_term_sps + num_long_term_pics; i++) {
+  for (uint32_t i = 0; i < num_long_term_sps + num_long_term_pics; i++) {
     if (used_by_curr_pic_lt[i]) {
       num_poc_total_curr++;
     }

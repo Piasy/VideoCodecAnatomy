@@ -109,6 +109,11 @@ absl::optional<H265PpsParser::PpsState> H265PpsParser::ParseInternal(
   RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(&pps.num_ref_idx_l1_default_active_minus1));
   // init_qp_minus26: se(v)
   RETURN_EMPTY_ON_FAIL(bit_buffer->ReadSignedExponentialGolomb(&pps.pic_init_qp_minus26));
+  // Sanity-check parsed value
+  if (pps.pic_init_qp_minus26 > kMaxPicInitQpDeltaValue ||
+      pps.pic_init_qp_minus26 < kMinPicInitQpDeltaValue) {
+    RETURN_EMPTY_ON_FAIL(false);
+  }
   // constrained_intra_pred_flag: u(1)
   RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(&bits_tmp, 1));
   // transform_skip_enabled_flag: u(1)
@@ -148,11 +153,11 @@ absl::optional<H265PpsParser::PpsState> H265PpsParser::ParseInternal(
     uint32_t uniform_spacing_flag = 0;
     RETURN_EMPTY_ON_FAIL(bit_buffer->ReadBits(&uniform_spacing_flag, 1));
     if (!uniform_spacing_flag) {
-      for (int i = 0; i < num_tile_columns_minus1; i++) {
+      for (uint32_t i = 0; i < num_tile_columns_minus1; i++) {
         // column_width_minus1: ue(v)
         RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(&golomb_ignored));
       }
-      for (int i = 0; i < num_tile_rows_minus1; i++) {
+      for (uint32_t i = 0; i < num_tile_rows_minus1; i++) {
         // row_height_minus1: ue(v)
         RETURN_EMPTY_ON_FAIL(bit_buffer->ReadExponentialGolomb(&golomb_ignored));
       }
